@@ -1,0 +1,7 @@
+jupyter-book
+jupyterlab_myst
+matplotlib
+numpy
+pandas
+streamlit
+altair
