@@ -10,4 +10,5 @@ st.write(
 st.sidebar.header("Navigation")
 st.sidebar.page_link("pages/02_Data_Table.py", label="Page 2 — Data Table")
 st.sidebar.page_link("pages/03_Plot.py", label="Page 3 — Plot")
+st.sidebar.page_link("pages/04_Extra.py", label="Page 4 — Extra")
 
