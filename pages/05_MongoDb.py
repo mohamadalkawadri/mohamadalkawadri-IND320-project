@@ -1,7 +1,6 @@
 from pymongo.mongo_client import MongoClient
 import streamlit as st
 import pandas as pd
-import numpy as np
 import matplotlib.pyplot as plt
 from datetime import datetime
 from bson.son import SON
