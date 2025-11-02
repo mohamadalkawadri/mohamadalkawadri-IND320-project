@@ -6,3 +6,4 @@ pandas
 streamlit
 altair
 pymongo
+openmeteo-requests
