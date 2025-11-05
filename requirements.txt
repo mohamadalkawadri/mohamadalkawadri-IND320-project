@@ -11,3 +11,4 @@ requests-cache
 retry-requests 
 scipy
 statsmodels
+scikit-learn
