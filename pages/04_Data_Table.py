@@ -1,12 +1,17 @@
 import streamlit as st
 import pandas as pd
-from utils import load_data
+from utils import download_era5_hourly
 
 st.set_page_config(page_title="Data Table")
 
 st.title("Data Table ")
 
+@st.cache_data
+def load_data():
+    df = download_era5_hourly(60.3913, 5.3221, year=2021)
+    return df
 df = load_data()
+
 
 rows = []
 for col in df.select_dtypes(include="number").columns.tolist():

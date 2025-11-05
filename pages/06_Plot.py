@@ -1,12 +1,16 @@
 import streamlit as st
 import pandas as pd
 import altair as alt
-from utils import load_data, mask_month_range
+from utils import download_era5_hourly, mask_month_range
 
 st.set_page_config(page_title="Plot")
 
 st.title("Interactive Plot")
 
+@st.cache_data
+def load_data():
+    df = download_era5_hourly(60.3913, 5.3221, year=2021)
+    return df
 df = load_data()
 
 num_cols = df.select_dtypes(include="number").columns.tolist()

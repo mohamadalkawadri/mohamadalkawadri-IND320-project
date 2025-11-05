@@ -8,7 +8,7 @@ from bson.son import SON
 
 st.set_page_config(page_title="MongoDB")
 
-st.title("Page 5 — MongoDB")
+st.title("Page 2 — MongoDB")
 
 @st.cache_resource(show_spinner=False)
 def get_mongo_collection():
@@ -85,7 +85,8 @@ with left:
     areas = distinct_price_areas()
     area_sel = st.radio("Price area", options=areas, index=0, horizontal=True)
     year_df = load_year(area_sel, YEAR)
-
+    st.session_state.selected_area = area_sel
+    
     if year_df.empty:
         st.info(f"No data for {area_sel} in {YEAR}.")
     else:

@@ -8,7 +8,9 @@ st.write(
 )
 
 st.sidebar.header("Navigation")
-st.sidebar.page_link("pages/02_Data_Table.py", label="Page 2 — Data Table")
-st.sidebar.page_link("pages/03_Plot.py", label="Page 3 — Plot")
-st.sidebar.page_link("pages/05_MongoDb.py", label="Page 5 — MongoDB")
+st.sidebar.page_link("pages/02_MongoDb.py", label="Page 1 — MongoDB")
+st.sidebar.page_link("pages/03_STL_Spectogram.py", label="Page 2 — STL & Spectrogram")
+st.sidebar.page_link("pages/04_Data_Table.py", label="Page 3 — Data Table")
+st.sidebar.page_link("pages/05_SPC_LOF.py", label="Page 4 — SPC & LOF")
+st.sidebar.page_link("pages/06_Plot.py", label="Page 5 — Plot")
 
