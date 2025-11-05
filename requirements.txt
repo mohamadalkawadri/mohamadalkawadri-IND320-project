@@ -9,3 +9,4 @@ pymongo
 openmeteo-requests
 requests-cache 
 retry-requests 
+scipy
