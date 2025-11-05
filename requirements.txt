@@ -7,3 +7,5 @@ streamlit
 altair
 pymongo
 openmeteo-requests
+requests-cache 
+retry-requests 
