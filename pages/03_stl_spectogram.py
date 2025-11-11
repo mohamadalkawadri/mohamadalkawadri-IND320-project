@@ -44,10 +44,8 @@ with tab1:
         trend_smoother=trend_smoother,
         robust=robust
     )
-    st.pyplot(plt)
 
 
 with tab2:
     st.header("Spectrogram Analysis (Frequency Spectrum Over Time)")
     plot_production_spectrogram(df, area=selected_area, group="hydro")
-    st.pyplot(plt)

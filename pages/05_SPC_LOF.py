@@ -24,11 +24,9 @@ tab1, tab2 = st.tabs(["📈 SPC", "🔊 LOF"])
 
 with tab1:
     st.header("SPC")
-    (plt, _, _) = plot_temperature_with_spc(df, city="Bergen")
-    st.pyplot(plt)
+    plot_temperature_with_spc(df, city="Bergen")
 
 
 with tab2:
     st.header("LOF")
-    (plt, _, _) = plot_precipitation_with_lof(df, city="Bergen")
-    st.pyplot(plt)
+    plot_precipitation_with_lof(df, city="Bergen")
