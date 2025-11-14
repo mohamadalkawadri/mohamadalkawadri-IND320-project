@@ -1,5 +1,5 @@
 secrets.txt
 secrets.toml
-__pycache__/
+__pycache__/*
 .cache.sqlite
 .vscode/

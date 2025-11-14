@@ -6,8 +6,8 @@ from scipy.signal import spectrogram
 from statsmodels.tsa.seasonal import STL
 from utils import plot_stl_decomposition, plot_production_spectrogram
 
-# --- PAGE CONFIG ---
-st.set_page_config(page_title="Weather Time-Series Analysis", layout="wide")
+st.set_page_config(page_title="STL & Spectrogram")
+
 
 # --- LOAD DATA ---
 @st.cache_data

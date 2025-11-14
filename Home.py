@@ -7,10 +7,13 @@ st.write(
     " Group Project for IND320 - Data til beslutning. "
 )
 
-st.sidebar.header("Navigation")
+st.sidebar.header("Explorative")
+st.sidebar.page_link("pages/01_Data_Table.py", label="Page 1 — Data Table")
 st.sidebar.page_link("pages/02_MongoDb.py", label="Page 2 — MongoDB")
-st.sidebar.page_link("pages/03_stl_spectogram.py", label="Page 3 — STL & Spectrogram")
-st.sidebar.page_link("pages/04_Data_Table.py", label="Page 4 — Data Table")
-st.sidebar.page_link("pages/05_SPC_LOF.py", label="Page 5 — SPC & LOF")
-st.sidebar.page_link("pages/06_Plot.py", label="Page 6 — Plot")
+st.sidebar.page_link("pages/03_Plot.py", label="Page 3 — Plot")
 
+st.sidebar.header("Anomalies")
+st.sidebar.page_link("pages/04_SPC & LOF.py", label="Page 4 — SPC & LOF")
+
+st.sidebar.header("Anomalies")
+st.sidebar.page_link("pages/05_STL & Spectogram.py", label="Page 5 — STL & Spectrogram")

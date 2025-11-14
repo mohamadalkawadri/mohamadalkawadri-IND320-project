@@ -6,11 +6,19 @@ st.set_page_config(page_title="Data Table")
 
 st.title("Data Table ")
 
+year = st.slider(
+    "Select year",
+    min_value=2021,
+    max_value=2024,
+    value=2021,
+    step=1
+)
+
 @st.cache_data
-def load_data():
-    df = download_era5_hourly(60.3913, 5.3221, year=2021)
+def load_data(year):
+    df = download_era5_hourly(60.3913, 5.3221, year=year)
     return df
-df = load_data()
+df = load_data(year)
 
 
 rows = []

@@ -4,6 +4,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from datetime import datetime
 from bson.son import SON
+import plotly.graph_objects as go
 
 
 st.set_page_config(page_title="MongoDB")
@@ -14,12 +15,18 @@ st.title("Page 2 — MongoDB")
 def get_mongo_collection():
     uri = st.secrets.get("MONGO_URI")
     client = MongoClient(uri, tlsAllowInvalidCertificates=True)
-    database = client['assignment2']
+    database = client['assignment4']
     collection = database['elhub']
     return collection
 
 coll = get_mongo_collection()
-YEAR = 2021
+year = st.slider(
+    "Select year",
+    min_value=2021,
+    max_value=2024,
+    value=2021,
+    step=1
+)
 
 @st.cache_data(show_spinner=False)
 def distinct_price_areas():
@@ -84,19 +91,32 @@ with left:
     st.subheader("Total Production — Pie")
     areas = distinct_price_areas()
     area_sel = st.radio("Price area", options=areas, index=0, horizontal=True)
-    year_df = load_year(area_sel, YEAR)
+    year_df = load_year(area_sel, year)
     st.session_state.selected_area = area_sel
     
     if year_df.empty:
-        st.info(f"No data for {area_sel} in {YEAR}.")
+        st.info(f"No data for {area_sel} in {year}.")
     else:
         pie_df = (year_df
                   .groupby("productionGroup", as_index=False)["quantityKwh"].sum()
                   .sort_values("quantityKwh", ascending=False))
-        fig, ax = plt.subplots()
-        ax.pie(pie_df["quantityKwh"], labels=pie_df["productionGroup"], autopct="%1.1f%%")
-        ax.set_title(f"{YEAR} Total — {area_sel}")
-        st.pyplot(fig, clear_figure=True)
+        fig = go.Figure(
+            go.Pie(
+                labels=pie_df["productionGroup"],
+                values=pie_df["quantityKwh"],
+                hovertemplate="<b>%{label}</b><br>%{value:.0f} kWh<br>%{percent}",
+                textinfo="percent+label",
+                hole=0  # set to 0.4 for donut
+            )
+        )
+
+        fig.update_layout(
+            title=f"{year} Total — {area_sel}",
+            height=500,
+            margin=dict(t=60, b=20, l=20, r=20)
+        )
+
+        st.plotly_chart(fig, use_container_width=True)
 
 # RIGHT: pills (production groups) + month selector → LINE plot
 with right:
@@ -114,9 +134,9 @@ with right:
     except Exception:
         selected_groups = st.multiselect("Production groups", options=all_groups, default=all_groups)
 
-    month_df = load_month(area_sel, YEAR, month_idx)
+    month_df = load_month(area_sel, year, month_idx)
     if month_df.empty:
-        st.info(f"No data for {area_sel}, {YEAR}-{month_idx:02d}.")
+        st.info(f"No data for {area_sel}, {year}-{month_idx:02d}.")
     else:
         if selected_groups:
             month_df = month_df[month_df["productionGroup"].isin(selected_groups)]
@@ -130,15 +150,33 @@ with right:
                     .pivot_table(index="startTime", columns="productionGroup", values="quantityKwh", aggfunc="sum")
                     .fillna(0.0)
                    )
-            fig2, ax2 = plt.subplots()
+            fig = go.Figure()
+
+            # Add each column as its own line
             for col in wide.columns:
-                ax2.plot(wide.index, wide[col], label=col)
-            ax2.set_title(f"{YEAR}-{month_idx:02d} — {area_sel}")
-            ax2.set_xlabel("Time")
-            ax2.set_ylabel("Quantity (kWh)")
-            ax2.legend()
-            fig2.autofmt_xdate()
-            st.pyplot(fig2, clear_figure=True)
+                fig.add_trace(go.Scatter(
+                    x=wide.index,
+                    y=wide[col],
+                    mode="lines",
+                    name=col,
+                ))
+
+            fig.update_layout(
+                title=f"{year}-{month_idx:02d} — {area_sel}",
+                xaxis_title="Time",
+                yaxis_title="Quantity (kWh)",
+                height=600,
+                template="plotly_white",
+                hovermode="x unified",
+                legend=dict(
+                    orientation="h",
+                    yanchor="bottom", y=1.02,
+                    xanchor="right", x=1
+                ),
+                margin=dict(l=40, r=40, t=60, b=40),
+            )
+
+            st.plotly_chart(fig, use_container_width=True)
 
 # ── Expander with short source note ────────────────────────────────────────────
 with st.expander("Data source"):
