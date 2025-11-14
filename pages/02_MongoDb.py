@@ -90,7 +90,7 @@ left, right = st.columns(2, gap="large")
 with left:
     st.subheader("Total Production — Pie")
     areas = distinct_price_areas()
-    area_sel = st.radio("Price area", options=areas, index=0, horizontal=True)
+    area_sel = st.radio("Price area", options=areas, index=areas.index(st.session_state.selected_area), horizontal=True)
     year_df = load_year(area_sel, year)
     st.session_state.selected_area = area_sel
     

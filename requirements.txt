@@ -12,3 +12,4 @@ retry-requests
 scipy
 statsmodels
 scikit-learn
+streamlit-plotly-events
