@@ -8,7 +8,9 @@ from utils import plot_stl_decomposition, plot_production_spectrogram
 
 st.set_page_config(page_title="STL & Spectrogram")
 
+from sidebar import setup_sidebar
 
+setup_sidebar()
 # --- LOAD DATA ---
 @st.cache_data
 def load_data():

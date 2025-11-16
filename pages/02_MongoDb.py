@@ -5,7 +5,9 @@ import matplotlib.pyplot as plt
 from datetime import datetime
 from bson.son import SON
 import plotly.graph_objects as go
+from sidebar import setup_sidebar
 
+setup_sidebar()
 
 st.set_page_config(page_title="MongoDB")
 
@@ -20,13 +22,7 @@ def get_mongo_collection():
     return collection
 
 coll = get_mongo_collection()
-year = st.slider(
-    "Select year",
-    min_value=2021,
-    max_value=2024,
-    value=2021,
-    step=1
-)
+year = st.session_state.year
 
 @st.cache_data(show_spinner=False)
 def distinct_price_areas():

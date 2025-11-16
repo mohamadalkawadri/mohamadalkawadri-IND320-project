@@ -2,14 +2,16 @@ import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
 from utils import plot_temperature_with_spc, plot_precipitation_with_lof, download_era5_hourly
+from sidebar import setup_sidebar
 
+setup_sidebar()
 # --- PAGE CONFIG ---
 st.set_page_config(page_title="Weather Time-Series Analysis", layout="wide")
 
 # --- LOAD DATA ---
 @st.cache_data
 def load_data():
-    df =  download_era5_hourly(60.3913, 5.3221, 2019)
+    df =  download_era5_hourly(60.3913, 5.3221, st.session_state.year)
     return df
 
 df = load_data()
