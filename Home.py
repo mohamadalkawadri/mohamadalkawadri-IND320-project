@@ -131,7 +131,6 @@ area_colors = {area: rgba(v) for area, v in zip(price_areas, norm)}
 # Build Plotly Figure
 # ---------------------------------------------------
 st.write("Click a Price Area – Highlight Selected Region")
-
 fig = go.Figure()
 trace_to_area = {}
 
@@ -143,7 +142,7 @@ for idx, feature in enumerate(geojson_data["features"]):
     lats = [c[1] for c in coords]
 
     # Highlight selected region
-    if st.session_state.selected_area == area:
+    if st.session_state.get("selected_area") == area:
         line_color = "red"
         line_width = 4
     else:
@@ -151,8 +150,8 @@ for idx, feature in enumerate(geojson_data["features"]):
         line_width = 1
 
     fig.add_trace(go.Scattermapbox(
-        lon=lons + [lons[0]],
-        lat=lats + [lats[0]],
+        lon=lons,
+        lat=lats,
         mode="lines",
         fill="toself",
         fillcolor=area_colors.get(area, "rgba(0,0,0,0)"),
@@ -160,7 +159,6 @@ for idx, feature in enumerate(geojson_data["features"]):
         line=dict(color=line_color, width=line_width)
     ))
 
-    # Map trace number to region name
     trace_to_area[idx] = area
 
 
@@ -185,9 +183,25 @@ clicked = plotly_events(
     override_height=650,
 )
 
+# ---------------------------------------------------
+# Fix: Extract coords from trace and save in session state
+# ---------------------------------------------------
 if clicked:
     trace_idx = clicked[0]["curveNumber"]
-    region = trace_to_area[trace_idx]
+    point_idx = clicked[0]["pointIndex"]
 
+    # Region name
+    region = trace_to_area[trace_idx]
     st.session_state.selected_area = region
+
+    # Extract coordinate from clicked polygon vertex
+    lon = fig.data[trace_idx].lon[point_idx]
+    lat = fig.data[trace_idx].lat[point_idx]
+
+    st.session_state.selected_coord = {
+        "lat": float(lat),
+        "lon": float(lon)
+    }
+
     st.success(f"Selected region: **{region}**")
+    st.info(f"Saved coord: lat={lat:.5f}, lon={lon:.5f}")
