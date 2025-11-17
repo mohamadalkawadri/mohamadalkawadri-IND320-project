@@ -3,3 +3,4 @@ secrets.toml
 __pycache__/*
 .cache.sqlite
 .vscode/
+pages/__pycache__

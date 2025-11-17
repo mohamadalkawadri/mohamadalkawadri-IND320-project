@@ -10,9 +10,13 @@ st.set_page_config(page_title="Plot")
 
 st.title("Interactive Plot")
 
+coords = st.session_state.get("selected_coord", { "lat": 60.3913, "lon": 5.3221 })
+lat = coords.get("lat")
+lon = coords.get("lon")
+
 @st.cache_data
 def load_data():
-    df = download_era5_hourly(60.3913, 5.3221, year=st.session_state.year)
+    df = download_era5_hourly(lat, lon, year=st.session_state.year)
     return df
 df = load_data()
 

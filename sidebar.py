@@ -11,3 +11,6 @@ def setup_sidebar():
 
     st.sidebar.header("Anomalies")
     st.sidebar.page_link("pages/05_STL & Spectogram.py", label="STL & Spectrogram")
+
+    st.sidebar.header("Correlation")
+    st.sidebar.page_link("pages/07_Sliding_Window_Correlation.py", label="Sliding Window Correlation")
