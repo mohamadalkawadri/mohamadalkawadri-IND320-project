@@ -10,6 +10,9 @@ from sklearn.neighbors import LocalOutlierFactor
 import streamlit as st
 import plotly.graph_objects as go
 from typing import Optional
+from plotly.subplots import make_subplots
+from scipy.fftpack import dct, idct
+
 
 def mask_month_range(df: pd.DataFrame, start_month, end_month) -> pd.Series:
     return (df["time"].dt.month >= start_month) & (df["time"].dt.month <= end_month)
@@ -181,8 +184,6 @@ def plot_production_spectrogram(
     # --- 4. Display in Streamlit ---
     st.plotly_chart(fig, use_container_width=True)
 
-from scipy.fftpack import dct, idct
-
 def compute_satv_spc_outliers(
     df: pd.DataFrame,
     cutoff: int = 100,
@@ -273,8 +274,6 @@ def compute_satv_spc_outliers(
 
     return work, stats
 
-
-from plotly.subplots import make_subplots
 
 def plot_temperature_with_spc(
     df: pd.DataFrame,
