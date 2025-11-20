@@ -74,26 +74,18 @@ def load_energy(year: int) -> pd.DataFrame:
 
     return df
 
-coords = st.session_state.get("selected_coord", { "lat": 60.3913, "lon": 5.3221 })
+
+coords = st.session_state.get("selected_coord", {"lat": 60.3913, "lon": 5.3221})
 lat = coords.get("lat")
 lon = coords.get("lon")
+
 
 @st.cache_data(show_spinner=False)
 def load_meteorology(year: int) -> pd.DataFrame:
     """
     Load ERA5 meteorological data for the given year.
-    Adjust the call to `download_era5_hourly` if your signature differs.
-    Expected columns in the returned dataframe:
-        - time
-        - temperature_2m (°C)
-        - precipitation (mm)
-        - wind_speed_10m (m/s)
-        - wind_gusts_10m (m/s)
-        - wind_direction_10m (°)
     """
 
-    # Example: change this if your utils.download_era5_hourly has a different API.
-    # Common patterns are e.g. (lat, lon, year) or (lat, lon, start, end).
     df_met = download_era5_hourly(lat, lon, year=year)
 
     df_met["time"] = pd.to_datetime(df_met["time"], utc=True).dt.tz_localize(None)
@@ -109,25 +101,18 @@ def load_meteorology(year: int) -> pd.DataFrame:
 energy_df = load_energy(year)
 met_df = load_meteorology(year)
 
-# Rename startTime → time to align with meteorology
+# Rename startTime → time
 energy_df = energy_df.rename(columns={"startTime": "time"})
 
 # ---------------------------------------------------------------------
-# UI: Title & description
+# UI
 # ---------------------------------------------------------------------
 st.title("Sliding Window Correlation")
 st.caption(
-    "Explore time-varying correlations between a meteorological variable and an "
-    "energy production/consumption group with adjustable lag (hours) and window length."
+    "Explore time-varying correlations between meteorology and energy "
+    "with adjustable lag and window size."
 )
 
-# ---------------------------------------------------------------------
-# UI: Selectors
-#   - price area
-#   - energy group
-#   - meteorological variable
-#   - window & lag
-# ---------------------------------------------------------------------
 price_areas = sorted(energy_df["priceArea"].unique().tolist())
 groups = sorted(energy_df["productionGroup"].unique().tolist())
 
@@ -145,11 +130,7 @@ with col1:
     selected_area = st.selectbox("Price area", price_areas, index=0)
 
 with col2:
-    energy_group = st.selectbox(
-        "Energy production/consumption group",
-        groups,
-        index=0,
-    )
+    energy_group = st.selectbox("Energy production/consumption group", groups, index=0)
 
 with col3:
     selected_met = st.selectbox("Meteorological variable", met_vars, index=0)
@@ -163,78 +144,57 @@ with col4:
         max_value=720,
         value=168,
         step=12,
-        help="Rolling window size used for the correlation calculation.",
     )
 
 with col5:
     lag_hours = st.slider(
-        "Lag (hours): meteorology relative to energy",
+        "Lag (hours)",
         min_value=-240,
         max_value=240,
         value=0,
         step=1,
-        help=(
-            "Positive values shift the meteorological series forward in time "
-            "relative to energy; negative values shift it backward."
-        ),
     )
 
 # ---------------------------------------------------------------------
-# Filter & merge data
+# Filter & merge
 # ---------------------------------------------------------------------
-# Filter energy for selected price area & group
 area_df = energy_df[
     (energy_df["priceArea"] == selected_area)
     & (energy_df["productionGroup"] == energy_group)
 ].copy()
 
 if area_df.empty:
-    st.error(f"No energy data for area={selected_area} and group={energy_group}.")
+    st.error("No energy data for chosen selections.")
     st.stop()
 
-# Aggregate in case of duplicate timestamps
 energy_series = (
     area_df[["time", "quantityKwh"]]
     .groupby("time", as_index=False)
     .mean()
 )
 
-# Keep only needed meteorological column
 if selected_met not in met_df.columns:
-    st.error(f"Selected meteorological variable '{selected_met}' not found in ERA5 data.")
+    st.error(f"Variable '{selected_met}' not in meteorology data.")
     st.stop()
 
 met_series = met_df[["time", selected_met]].copy()
 
-# Merge on time
-merged = pd.merge(
-    energy_series,
-    met_series,
-    on="time",
-    how="inner",
-)
+merged = pd.merge(energy_series, met_series, on="time", how="inner")
 
 if merged.empty:
-    st.error("No overlapping timestamps between energy and meteorological data.")
+    st.error("No overlapping timestamps between datasets.")
     st.stop()
 
-merged = merged.sort_values("time")
-merged = merged.set_index("time")
+merged = merged.sort_values("time").set_index("time")
 
-# Build the series used for correlation:
-#   - Energy:    "quantityKwh"
-#   - Met var:   selected_met
 series = merged[["quantityKwh", selected_met]].dropna()
 
 if series.empty:
-    st.error("Not enough overlapping data points between the selected series.")
+    st.error("Insufficient overlapping data.")
     st.stop()
 
 # ---------------------------------------------------------------------
-# Sliding window correlation
-#   We treat:
-#       X = energy (quantityKwh)
-#       Y = meteorological variable (selected_met), which is lagged
+# Sliding correlation
 # ---------------------------------------------------------------------
 result_df, overall_corr = compute_sliding_correlation(
     series,
@@ -244,47 +204,36 @@ result_df, overall_corr = compute_sliding_correlation(
     lag=lag_hours,
 )
 
-# For plotting: original energy + lagged meteorology
 result_df["Energy (Series A)"] = series["quantityKwh"]
 result_df["Meteorology (Series B, lagged)"] = series[selected_met].shift(lag_hours)
 
-# Peak rolling correlation
 valid_corr = result_df["rolling_corr"].dropna()
-peak_time = None
-peak_corr = None
-if not valid_corr.empty:
-    peak_idx = valid_corr.idxmax()
-    peak_time = peak_idx
-    peak_corr = valid_corr.loc[peak_idx]
+peak_time = valid_corr.idxmax() if not valid_corr.empty else None
+peak_corr = valid_corr.max() if not valid_corr.empty else None
 
-# ---------------------------------------------------------------------
-# Metrics
-# ---------------------------------------------------------------------
 metric_cols = st.columns(3)
-metric_cols[0].metric("Overall corr (with lag)", f"{overall_corr:.3f}")
+metric_cols[0].metric("Overall corr", f"{overall_corr:.3f}")
 metric_cols[1].metric(
     "Max rolling corr",
     f"{peak_corr:.3f}" if peak_corr is not None else "n/a",
-    help=f"Peak at {peak_time}" if peak_time is not None else None,
+    help=str(peak_time),
 )
-metric_cols[2].metric("Window (hours)", window_hours)
+metric_cols[2].metric("Window", window_hours)
 
 # ---------------------------------------------------------------------
-# Plotly figure
-#   Top: Energy & Meteorology (lagged)
-#   Bottom: rolling correlation
+# New 3-panel Plotly figure
 # ---------------------------------------------------------------------
 fig = make_subplots(
-    rows=2,
+    rows=3,
     cols=1,
     shared_xaxes=True,
-    vertical_spacing=0.08,
-    row_heights=[0.55, 0.45],
+    vertical_spacing=0.07,
+    row_heights=[0.40, 0.30, 0.30],
 )
 
 time_index = result_df.index
 
-# Top: Energy series
+# Row 1 — Energy
 fig.add_trace(
     go.Scatter(
         x=time_index,
@@ -296,21 +245,23 @@ fig.add_trace(
     row=1,
     col=1,
 )
+fig.update_yaxes(title_text="Energy (kWh)", row=1, col=1)
 
-# Top: Meteorological series (lagged)
+# Row 2 — Met variable
 fig.add_trace(
     go.Scatter(
         x=time_index,
         y=result_df["Meteorology (Series B, lagged)"],
         mode="lines",
-        name=f"Met: {selected_met} (lagged {lag_hours}h)",
+        name=f"{selected_met} (lagged {lag_hours}h)",
         line=dict(color="crimson"),
     ),
-    row=1,
+    row=2,
     col=1,
 )
+fig.update_yaxes(title_text=selected_met, row=2, col=1)
 
-# Bottom: Rolling correlation
+# Row 3 — Rolling correlation
 fig.add_trace(
     go.Scatter(
         x=time_index,
@@ -319,26 +270,23 @@ fig.add_trace(
         name="Rolling correlation",
         line=dict(color="darkgreen"),
     ),
-    row=2,
+    row=3,
     col=1,
 )
-
-fig.add_hline(y=0, line=dict(color="gray", dash="dash"), row=2, col=1)
+fig.add_hline(y=0, line=dict(color="gray", dash="dash"), row=3, col=1)
+fig.update_yaxes(title_text="Correlation", range=[-1.05, 1.05], row=3, col=1)
+fig.update_xaxes(title_text="Time", row=3, col=1)
 
 fig.update_layout(
-    height=800,
+    height=1000,
     title=(
-        f"{selected_area} — Energy group: {energy_group} vs {selected_met} "
+        f"{selected_area} — Energy: {energy_group} vs {selected_met} "
         f"(lag {lag_hours}h, window {window_hours}h, year {year})"
     ),
-    legend=dict(orientation="h", yanchor="bottom", y=1.05, xanchor="right", x=1),
+    legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
     hovermode="x unified",
     margin=dict(l=40, r=40, t=60, b=40),
 )
-
-fig.update_xaxes(title_text="Time", row=2, col=1)
-fig.update_yaxes(title_text="Quantity (kWh)", row=1, col=1)
-fig.update_yaxes(title_text="Rolling correlation", range=[-1.05, 1.05], row=2, col=1)
 
 st.plotly_chart(fig, use_container_width=True)
 
@@ -346,14 +294,9 @@ st.plotly_chart(fig, use_container_width=True)
 # Data preview
 # ---------------------------------------------------------------------
 with st.expander("Show correlation data"):
-    preview_cols = [
-        "Energy (Series A)",
-        "Meteorology (Series B, lagged)",
-        "rolling_corr",
-    ]
     st.dataframe(
-        result_df[preview_cols]
-        .rename(columns={"rolling_corr": "rolling_corr (two-sided)"})
-        .dropna(),
+        result_df[
+            ["Energy (Series A)", "Meteorology (Series B, lagged)", "rolling_corr"]
+        ].dropna(),
         use_container_width=True,
     )

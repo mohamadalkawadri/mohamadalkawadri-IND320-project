@@ -120,10 +120,11 @@ norm = (vals - minv) / (maxv - minv + 1e-9)
 
 # Convert to rgba
 def rgba(v, alpha=0.4):
-    # blue → red gradient
-    r = int(255 * v)
-    b = int(255 * (1-v))
-    return f"rgba({r},0,{b},{alpha})"
+    # white → blue gradient
+    r = int(255 * (1 - v))   # decreases toward 0
+    g = int(255 * (1 - v))   # decreases toward 0
+    b = 255                  # always full blue
+    return f"rgba({r},{g},{b},{alpha})"
 
 area_colors = {area: rgba(v) for area, v in zip(price_areas, norm)}
 
@@ -155,7 +156,7 @@ for idx, feature in enumerate(geojson_data["features"]):
         mode="lines",
         fill="toself",
         fillcolor=area_colors.get(area, "rgba(0,0,0,0)"),
-        name=f"{area} ({mean_by_area[area]:,.0f} kWh)",
+        name=f"{area} ({mean_by_area.get(area, 0):,.0f} kWh)",
         line=dict(color=line_color, width=line_width)
     ))
 
@@ -174,6 +175,17 @@ fig.update_layout(
 # ---------------------------------------------------
 # Capture click event
 # ---------------------------------------------------
+# Persist a marker for the last clicked coordinate
+if "selected_coord" in st.session_state:
+    coord = st.session_state.selected_coord
+    fig.add_trace(go.Scattermapbox(
+        lon=[coord["lon"]],
+        lat=[coord["lat"]],
+        mode="markers",
+        marker=dict(size=14, color="black"),
+        name="Selected coordinate"
+    ))
+
 clicked = plotly_events(
     fig,
     click_event=True,
@@ -187,16 +199,20 @@ clicked = plotly_events(
 # Fix: Extract coords from trace and save in session state
 # ---------------------------------------------------
 if clicked:
-    trace_idx = clicked[0]["curveNumber"]
-    point_idx = clicked[0]["pointIndex"]
+    event = clicked[0]
+    trace_idx = event["curveNumber"]
+    point_idx = event["pointIndex"]
 
     # Region name
-    region = trace_to_area[trace_idx]
+    region = trace_to_area.get(trace_idx, st.session_state.selected_area)
     st.session_state.selected_area = region
 
-    # Extract coordinate from clicked polygon vertex
-    lon = fig.data[trace_idx].lon[point_idx]
-    lat = fig.data[trace_idx].lat[point_idx]
+    # Use the event coordinates; fall back to the polygon vertices
+    lon = event.get("lon")
+    lat = event.get("lat")
+    if lon is None or lat is None:
+        lon = fig.data[trace_idx].lon[point_idx]
+        lat = fig.data[trace_idx].lat[point_idx]
 
     st.session_state.selected_coord = {
         "lat": float(lat),
