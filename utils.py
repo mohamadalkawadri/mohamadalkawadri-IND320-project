@@ -259,6 +259,18 @@ def compute_satv_spc_outliers(
     work["SATV"] = satv
     work["is_outlier"] = outlier_mask
 
+   # --- Reconstruct the seasonal component (low-frequency only) ---
+    dct_low = np.copy(dct_coeffs)
+    dct_low[cutoff:] = 0
+    seasonal_component = idct(dct_low, norm="ortho")
+
+    # SPC bands transformed back to temperature scale
+    upper_temp_band = seasonal_component + upper_limit
+    lower_temp_band = seasonal_component + lower_limit
+
+    work["upper_temp_band"] = upper_temp_band
+    work["lower_temp_band"] = lower_temp_band 
+
     stats = {
         "n_observations": len(work),
         "n_outliers": int(outlier_mask.sum()),
@@ -382,6 +394,30 @@ def plot_temperature_with_spc(
         ),
         row=2, col=1,
     )
+
+    # SPC boundaries on raw temperature (transformed back from SATV)
+    fig.add_trace(
+        go.Scatter(
+            x=time,
+            y=work["upper_temp_band"],
+            mode="lines",
+            name="Upper SPC (temperature domain)",
+            line=dict(color="orange", dash="dot"),
+        ),
+        row=1, col=1,
+    )
+
+    fig.add_trace(
+        go.Scatter(
+            x=time,
+            y=work["lower_temp_band"],
+            mode="lines",
+            name="Lower SPC (temperature domain)",
+            line=dict(color="orange", dash="dot"),
+        ),
+        row=1, col=1,
+    )
+
 
     # --- 3. Layout ---
     fig.update_xaxes(title_text="Time", row=2, col=1)
